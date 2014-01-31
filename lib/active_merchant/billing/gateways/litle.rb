@@ -171,11 +171,11 @@ module ActiveMerchant #:nodoc:
           Response.new(
               valid_responses.include?(detail['response']),
               detail['message'],
-              { :litleOnlineResponse => response },
-              :authorization => authorization_from(detail, kind),
-              :avs_result    => { :code => fraud['avs'] },
-              :cvv_result    => fraud['cvv'],
-              :test          => test?
+              { litleOnlineResponse: response, response_code: detail['response'] },
+              authorization: authorization_from(detail, kind),
+              avs_result: { :code => fraud['avs'] },
+              cvv_result: fraud['cvv'],
+              test: test?
           )
         else
           Response.new(false, response['message'], :litleOnlineResponse => response, :test => test?)
@@ -335,7 +335,7 @@ module ActiveMerchant #:nodoc:
         end
 
         if options[:description]
-          enhanced_data['customerReference'] = options[:description]
+          enhanced_data['customerReference'] = options[:description][0..16]
         end
 
         if options[:billing_address]

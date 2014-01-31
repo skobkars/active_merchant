@@ -377,6 +377,7 @@ class LitleTest < Test::Unit::TestCase
     assert_equal 'successful', responseFrom.message
     assert_equal '1234;authorization', responseFrom.authorization
     assert_equal '1111222233334444', responseFrom.params['litleOnlineResponse']['authorizationResponse']['litleToken']
+    assert_equal '000', responseFrom.params['response_code']
   end
 
   def test_avs
@@ -741,6 +742,20 @@ class LitleTest < Test::Unit::TestCase
     assert_deprecation_warning(Gateway::CREDIT_DEPRECATION_MESSAGE, @gateway) do
       assert response = @gateway.credit(0, '123')
     end
+  end
+
+  def test_refund_should_not_error_on_customer_reference_length
+    return_object = {
+      'response' => '0',
+      'creditResponse' => {
+        'response'    => '000',
+        'message'     => 'pass',
+        'litleTxnId'  =>'123456789012345678'
+      }
+    }
+    LitleOnline::Communications.expects(:http_post => return_object.to_xml(:root => 'litleOnlineResponse'))
+    response = @gateway.refund(0, "1234;credit", {:description => 'A lengthy refund description'})
+    assert response.success?
   end
 
   private
