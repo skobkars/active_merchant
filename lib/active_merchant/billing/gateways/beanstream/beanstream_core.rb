@@ -360,8 +360,18 @@ module ActiveMerchant #:nodoc:
       end
 
       def add_source(post, source)
+        # source as a String or Integer is kept for compatibility.
+        # Would make sense to deprecate this.
         if source.is_a?(String) or source.is_a?(Integer)
           post[:customerCode] = source
+        elsif source.is_a?(Hash)
+          if source.has_key?(:payment_profile)
+            post[:customerCode] = source[:payment_profile]
+          elsif source.has_key?(:legato)
+            post[:singleUseToken] = source[:legato]
+          else
+            raise ArgumentError.new("Only :payment_profile and :legato are valid keys.")
+          end
         else
           card_brand(source) == "check" ? add_check(post, source) : add_credit_card(post, source)
         end
@@ -383,11 +393,18 @@ module ActiveMerchant #:nodoc:
         end
         params[:vbvEnabled] = '0'
         params[:scEnabled] = '0'
+        param_str = params.reject{|k, v| v.blank?}.collect { |key, value| "#{key}=#{CGI.escape(value.to_s)}" }.join("&")
 
-        params.reject{|k, v| v.blank?}.collect { |key, value| "#{key}=#{CGI.escape(value.to_s)}" }.join("&")
+        # Allow for hash key authentication instead of user / pass
+        # Only need to specify merchant_id and hash_value in the gateway.yml file
+        if @options[:hash_value]
+          request_hash = Digest::SHA1.hexdigest(param_str + @options[:hash_value])
+          param_str += "&hashValue=#{request_hash}"
+        end
+
+        param_str
       end
 
     end
   end
 end
-
