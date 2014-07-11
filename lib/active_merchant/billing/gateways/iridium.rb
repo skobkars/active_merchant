@@ -236,7 +236,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def credit(money, authorization, options={})
-        deprecated CREDIT_DEPRECATION_MESSAGE
+        ActiveMerchant.deprecated CREDIT_DEPRECATION_MESSAGE
         refund(money, authorization, options)
       end
 
@@ -261,7 +261,7 @@ module ActiveMerchant #:nodoc:
 
       def build_reference_request(type, money, authorization, options)
         options.merge!(:action => 'CrossReferenceTransaction')
-        order_id, cross_reference, auth_id = authorization.split(";")
+        order_id, cross_reference, _ = authorization.split(";")
         build_request(options) do |xml|
           if money
             details = {'CurrencyCode' => currency_code(options[:currency] || default_currency), 'Amount' => amount(money)}

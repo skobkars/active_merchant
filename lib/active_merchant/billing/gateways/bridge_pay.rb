@@ -22,6 +22,8 @@ module ActiveMerchant #:nodoc:
       def purchase(amount, creditcard, options={})
         post = post_required_fields("Sale")
 
+        # Allow the same amount in multiple transactions.
+        post[:ExtData] = "<Force>T</Force>"
         add_invoice(post, amount, options)
         add_creditcard(post, creditcard)
         add_customer_data(post, options)
@@ -50,8 +52,9 @@ module ActiveMerchant #:nodoc:
       end
 
       def refund(amount, authorization, options={})
-        post = post_required_fields("Reversal")
+        post = post_required_fields("Return")
 
+        add_invoice(post, amount, options)
         add_reference(post, authorization)
 
         commit(post)
@@ -81,8 +84,7 @@ module ActiveMerchant #:nodoc:
         post[:Street] = ""
         post[:CVNum] = ""
         post[:MagData] = ""
-        # Allow the same amount in multiple transactions.
-        post[:ExtData] = "<Force>T</Force>"
+        post[:ExtData] = ""
         post
       end
 
@@ -133,7 +135,7 @@ module ActiveMerchant #:nodoc:
         raw = parse(ssl_post(url, data))
 
         Response.new(
-          success_from(raw[:message]),
+          success_from(raw[:respmsg]),
           message_from(raw),
           raw,
           authorization: authorization_from(raw),
@@ -143,7 +145,7 @@ module ActiveMerchant #:nodoc:
 
       def success_from(result)
         case result
-        when "APPROVAL"
+        when "Approved"
           true
         else
           false

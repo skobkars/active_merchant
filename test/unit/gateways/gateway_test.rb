@@ -17,6 +17,22 @@ class GatewayTest < Test::Unit::TestCase
     assert_false [:visa, :bogus].all? { |invalid_cardtype| Gateway.supports?(invalid_cardtype) }
   end
 
+  def test_should_validate_supported_countries
+    assert_raise(ActiveMerchant::InvalidCountryCodeError) do
+      Gateway.supported_countries = %w(us uk sg)
+    end
+
+    all_country_codes = ActiveMerchant::Country::COUNTRIES.collect do |country|
+      [country[:alpha2], country[:alpha3]]
+    end.flatten
+
+    assert_nothing_raised do
+      Gateway.supported_countries = all_country_codes
+      assert Gateway.supported_countries == all_country_codes,
+        "List of supported countries not properly set"
+    end
+  end
+
   def test_should_gateway_uses_ssl_strict_checking_by_default
     assert Gateway.ssl_strict
   end

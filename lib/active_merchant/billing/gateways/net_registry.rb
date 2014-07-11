@@ -104,7 +104,7 @@ module ActiveMerchant
       end
 
       def credit(money, identification, options = {})
-        deprecated CREDIT_DEPRECATION_MESSAGE
+        ActiveMerchant.deprecated CREDIT_DEPRECATION_MESSAGE
         refund(money, identification, options)
       end
 
@@ -151,7 +151,7 @@ module ActiveMerchant
       def post_data(action, params)
         params['COMMAND'] = TRANSACTIONS[action]
         params['LOGIN'] = "#{@options[:login]}/#{@options[:password]}"
-        URI.encode(params.map{|k,v| "#{k}=#{v}"}.join('&'))
+        CGI.escape(params.map{|k,v| "#{k}=#{v}"}.join('&'))
       end
 
       def parse(response)

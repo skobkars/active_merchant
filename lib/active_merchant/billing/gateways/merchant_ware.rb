@@ -105,7 +105,7 @@ module ActiveMerchant #:nodoc:
       #   * <tt>:order_id</tt> - A unique reference for this order (required when performing a non-referenced credit)
       def credit(money, identification, options = {})
         if identification.is_a?(String)
-          deprecated CREDIT_DEPRECATION_MESSAGE
+          ActiveMerchant.deprecated CREDIT_DEPRECATION_MESSAGE
           refund(money, identification, options)
         else
           perform_credit(money, identification, options)
@@ -151,7 +151,7 @@ module ActiveMerchant #:nodoc:
       def build_purchase_request(action, money, credit_card, options)
         requires!(options, :order_id)
 
-        request = soap_request(action) do |xml|
+        soap_request(action) do |xml|
           add_invoice(xml, options)
           add_amount(xml, money)
           add_credit_card(xml, credit_card)
@@ -162,7 +162,7 @@ module ActiveMerchant #:nodoc:
       def build_capture_request(action, money, identification, options)
         reference, options[:order_id] = split_reference(identification)
 
-        request = soap_request(action) do |xml|
+        soap_request(action) do |xml|
           add_reference(xml, reference)
           add_invoice(xml, options)
           add_amount(xml, money)
@@ -197,13 +197,6 @@ module ActiveMerchant #:nodoc:
         xml.tag! "strSiteId", @options[:login]
         xml.tag! "strKey", @options[:password]
         xml.tag! "strName", @options[:name]
-      end
-
-      def expdate(credit_card)
-        year  = sprintf("%.4i", credit_card.year)
-        month = sprintf("%.2i", credit_card.month)
-
-        "#{month}#{year[-2..-1]}"
       end
 
       def add_invoice(xml, options)
@@ -279,7 +272,7 @@ module ActiveMerchant #:nodoc:
 
         response[:message] = response["faultstring"].to_s.gsub("\n", " ")
         response
-      rescue REXML::ParseException => e
+      rescue REXML::ParseException
         response[:http_body]        = http_response.body
         response[:message]          = "Failed to parse the failed response"
         response

@@ -44,19 +44,6 @@ class RemoteSagePayTest < Test::Unit::TestCase
       :brand => 'visa'
     )
 
-    @solo = CreditCard.new(
-      :number => '6334900000000005',
-      :month => 6,
-      :year => next_year,
-      :issue_number => 1,
-      :start_month => 12,
-      :start_year => next_year - 2,
-      :verification_value => 227,
-      :first_name => 'Tekin',
-      :last_name => 'Suleyman',
-      :brand => 'solo'
-    )
-
     @mastercard = CreditCard.new(
       :number => '5404000000000001',
       :month => 12,
@@ -179,13 +166,6 @@ class RemoteSagePayTest < Test::Unit::TestCase
     assert !response.authorization.blank?
   end
 
-  def test_successful_solo_purchase
-    assert response = @gateway.purchase(@amount, @solo, @options)
-    assert_success response
-    assert response.test?
-    assert !response.authorization.blank?
-  end
-
   def test_successful_amex_purchase
     assert response = @gateway.purchase(@amount, @amex, @options)
     assert_success response
@@ -200,9 +180,36 @@ class RemoteSagePayTest < Test::Unit::TestCase
     assert !response.authorization.blank?
   end
 
-  def test_successful_purchase_with_long_description
-    description = "SagePay transactions fail if the description is more than 100 characters. Therefore, we truncate it to 100 characters."
-    assert response = @gateway.purchase(@amount, @visa, @options.merge(description: description))
+  def test_successful_purchase_with_overly_long_fields
+    options = {
+      description: "SagePay transactions fail if the description is more than 100 characters. Therefore, we truncate it to 100 characters.",
+      order_id: "#{generate_unique_id} SagePay order_id cannot be more than 40 characters.",
+      billing_address: {
+        name: 'FirstNameCannotBeMoreThanTwentyChars SurnameCannotBeMoreThanTwenty',
+        address1: 'The Billing Address 1 Cannot Be More Than One Hundred Characters if it is it will fail.  Therefore, we truncate it.',
+        address2: 'The Billing Address 2 Cannot Be More Than One Hundred Characters if it is it will fail.  Therefore, we truncate it.',
+        phone: "111222333444555666777888999",
+        city: "TheCityCannotBeMoreThanFortyCharactersReally",
+        state: "NCStateIsTwoChars",
+        country: 'USMustBeTwoChars',
+        zip: 'PostalCodeCannotExceedTenChars'
+      },
+      shipping_address: {
+        name: 'FirstNameCannotBeMoreThanTwentyChars SurnameCannotBeMoreThanTwenty',
+        address1: 'The Shipping Address 1 Cannot Be More Than One Hundred Characters if it is it will fail.  Therefore, we truncate it.',
+        address2: 'The Shipping Address 2 Cannot Be More Than One Hundred Characters if it is it will fail.  Therefore, we truncate it.',
+        phone: "111222333444555666777888999",
+        city: "TheCityCannotBeMoreThanFortyCharactersReally",
+        state: "NCStateIsTwoChars",
+        country: 'USMustBeTwoChars',
+        zip: 'PostalCodeCannotExceedTenChars'
+      }
+    }
+
+    @visa.first_name = "FullNameOnACardMustBeLessThanFiftyCharacters"
+    @visa.last_name = "OtherwiseSagePayFailsIt"
+
+    assert response = @gateway.purchase(@amount, @visa, options)
     assert_success response
   end
 
@@ -215,6 +222,42 @@ class RemoteSagePayTest < Test::Unit::TestCase
     assert response = gateway.purchase(@amount, @mastercard, @options)
     assert_equal message, response.message
     assert_failure response
+  end
+
+  def test_successful_store_and_purchace
+    assert response = @gateway.store(@visa)
+    assert_success response
+    assert !response.authorization.blank?
+    assert purchase = @gateway.purchase(@amount, response.authorization, @options)
+    assert_success purchase
+  end
+
+  def test_successful_store_and_authorize
+    assert response = @gateway.store(@visa)
+    assert_success response
+    assert !response.authorization.blank?
+    assert authorize = @gateway.authorize(@amount, response.authorization, @options)
+    assert_success authorize
+  end
+
+  def test_successful_token_creation_from_purchase
+    assert response = @gateway.purchase(@amount, @visa, @options.merge(:store => true))
+    assert_success response
+    assert !response.authorization.blank?
+  end
+
+  def test_successful_token_creation_from_authorize
+    assert response = @gateway.authorize(@amount, @visa, @options.merge(:store => true))
+    assert_success response
+    assert !response.authorization.blank?
+  end
+
+  def test_successful_unstore
+    assert response = @gateway.store(@visa)
+    assert_success response
+    assert !response.authorization.blank?
+    assert unstore = @gateway.unstore(response.authorization)
+    assert_success unstore
   end
 
   private

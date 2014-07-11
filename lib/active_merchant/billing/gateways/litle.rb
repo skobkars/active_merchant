@@ -49,7 +49,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def capture(money, authorization, options={})
-        transaction_id, kind = split_authorization(authorization)
+        transaction_id, _ = split_authorization(authorization)
 
         request = build_xml_request do |doc|
           add_authentication(doc)
@@ -63,12 +63,12 @@ module ActiveMerchant #:nodoc:
       end
 
       def credit(money, authorization, options = {})
-        deprecated CREDIT_DEPRECATION_MESSAGE
+        ActiveMerchant.deprecated CREDIT_DEPRECATION_MESSAGE
         refund(money, authorization, options)
       end
 
       def refund(money, authorization, options={})
-        transaction_id, kind = split_authorization(authorization)
+        transaction_id, _ = split_authorization(authorization)
 
         request = build_xml_request do |doc|
           add_authentication(doc)
@@ -299,7 +299,6 @@ module ActiveMerchant #:nodoc:
           'Content-Type' => 'text/xml'
         }
       end
-
     end
   end
 end

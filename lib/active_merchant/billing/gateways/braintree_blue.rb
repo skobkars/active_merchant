@@ -110,6 +110,13 @@ module ActiveMerchant #:nodoc:
         end
       end
 
+      def verify(credit_card, options = {})
+        MultiResponse.run(:use_first_response) do |r|
+          r.process { authorize(100, credit_card, options) }
+          r.process(:ignore_result) { void(r.authorization, options) }
+        end
+      end
+
       def store(creditcard, options = {})
         if options[:customer].present?
           MultiResponse.new.tap do |r|
@@ -256,6 +263,10 @@ module ActiveMerchant #:nodoc:
         valid_options = {}
         options.each do |key, value|
           valid_options[key] = value if [:update_existing_token, :verify_card, :verification_merchant_account_id].include?(key)
+        end
+
+        if valid_options.include?(:verify_card) && @merchant_account_id
+          valid_options[:verification_merchant_account_id] ||= @merchant_account_id
         end
 
         parameters[:credit_card] ||= {}
