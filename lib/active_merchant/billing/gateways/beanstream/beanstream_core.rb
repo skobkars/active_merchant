@@ -367,8 +367,9 @@ module ActiveMerchant #:nodoc:
         elsif source.is_a?(Hash)
           if source.has_key?(:payment_profile)
             post[:customerCode] = source[:payment_profile]
-          elsif source.has_key?(:legato)
+          elsif source.has_key?(:legato) && source.has_key?(:card_owner)
             post[:singleUseToken] = source[:legato]
+            post[:trnCardOwner] = source[:card_owner]
           else
             raise ArgumentError.new("Only :payment_profile and :legato are valid keys.")
           end
@@ -389,6 +390,7 @@ module ActiveMerchant #:nodoc:
         else
           params[:username] = @options[:user] if @options[:user]
           params[:password] = @options[:password] if @options[:password]
+          params[:passCode] = @options[:passcode] if @options[:passcode]
           params[:merchant_id] = @options[:login]
         end
         params[:vbvEnabled] = '0'
