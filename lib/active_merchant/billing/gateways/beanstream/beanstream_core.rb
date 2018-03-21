@@ -70,7 +70,7 @@ module ActiveMerchant #:nodoc:
 
         # The homepage URL of the gateway
         base.homepage_url = 'http://www.beanstream.com/'
-        base.live_url = 'https://www.beanstream.com/scripts/process_transaction.asp'
+        base.live_url = 'https://api.na.bambora.com/scripts/process_transaction.asp'
 
         # The name of the gateway
         base.display_name = 'Beanstream.com'
